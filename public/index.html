@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识数据采集系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📚 知识数据采集系统</h1>
+        
+        <!-- 提交表单 -->
+        <div class="card">
+            <h2>提交数据</h2>
+            <form id="submitForm">
+                <div class="form-group">
+                    <label>你的姓名/ID：</label>
+                    <input type="text" id="username" required placeholder="请输入你的名字">
+                </div>
+                
+                <div class="form-group">
+                    <label>选择领域：</label>
+                    <div class="field-selector">
+                        <select id="fieldSelect" required>
+                            <option value="">-- 选择领域 --</option>
+                        </select>
+                        <button type="button" id="addFieldBtn">+ 新建领域</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>基本世界知识：</label>
+                    <textarea id="knowledge" required placeholder="例如：牛顿第二定律 F=ma"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>由此得到的数据：</label>
+                    <textarea id="derivedData" required placeholder="例如：当质量为2kg，加速度为3m/s²时，力为6N"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary">提交数据</button>
+            </form>
+        </div>
+        
+        <!-- 数据查看 -->
+        <div class="card">
+            <h2>查看提交记录</h2>
+            <div class="search-bar">
+                <input type="text" id="searchUser" placeholder="输入用户名查询">
+                <button onclick="searchSubmissions()" class="btn-secondary">查询</button>
+                <button onclick="loadAllSubmissions()" class="btn-secondary">显示全部</button>
+            </div>
+            
+            <div id="submissionsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 加载领域列表
+        async function loadFields() {
+            const res = await fetch('/api/fields');
+            const data = await res.json();
+            const select = document.getElementById('fieldSelect');
+            select.innerHTML = '<option value="">-- 选择领域 --</option>';
+            data.fields.forEach(field => {
+                select.innerHTML += `<option value="${field}">${field}</option>`;
+            });
+        }
+
+        // 添加新领域
+        document.getElementById('addFieldBtn').addEventListener('click', async () => {
+            const field = prompt('请输入新领域名称：');
+            if (field) {
+                await fetch('/api/fields', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field })
+                });
+                loadFields();
+            }
+        });
+
+        // 提交表单
+        document.getElementById('submitForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submission = {
+                username: document.getElementById('username').value,
+                field: document.getElementById('fieldSelect').value,
+                knowledge: document.getElementById('knowledge').value,
+                derivedData: document.getElementById('derivedData').value
+            };
+            
+            const res = await fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submission)
+            });
+            
+            if (res.ok) {
+                alert('提交成功！');
+                e.target.reset();
+                loadAllSubmissions();
+            } else {
+                alert('提交失败，请重试');
+            }
+        });
+
+        // 加载所有提交
+        async function loadAllSubmissions() {
+            const res = await fetch('/api/submissions');
+            const data = await res.json();
+            displaySubmissions(data.submissions);
+        }
+
+        // 搜索用户提交
+        async function searchSubmissions() {
+            const username = document.getElementById('searchUser').value;
+            if (!username) {
+                loadAllSubmissions();
+                return;
+            }
+            
+            const res = await fetch(`/api/submissions/${username}`);
+            const data = await res.json();
+            displaySubmissions(data.submissions);
+        }
+
+        // 显示提交列表
+        function displaySubmissions(submissions) {
+            const list = document.getElementById('submissionsList');
+            
+            if (submissions.length === 0) {
+                list.innerHTML = '<p class="no-data">暂无数据</p>';
+                return;
+            }
+            
+            list.innerHTML = submissions.map(s => `
+                <div class="submission-item">
+                    <div class="submission-header">
+                        <span class="username">👤 ${s.username}</span>
+                        <span class="field-tag">${s.field}</span>
+                        <span class="timestamp">${new Date(s.timestamp).toLocaleString('zh-CN')}</span>
+                    </div>
+                    <div class="submission-content">
+                        <p><strong>世界知识：</strong>${s.knowledge}</p>
+                        <p><strong>得到的数据：</strong>${s.derivedData}</p>
+                    </div>
+                    <button onclick="deleteSubmission('${s.id}')" class="btn-delete">删除</button>
+                </div>
+            `).join('');
+        }
+
+        // 删除提交
+        async function deleteSubmission(id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
+            loadAllSubmissions();
+        }
+
+        // 页面加载时初始化
+        loadFields();
+        loadAllSubmissions();
+    </script>
+</body>
+</html>

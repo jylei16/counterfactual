@@ -1,0 +1,16 @@
+{
+    "name": "knowledge-data-collection",
+    "version": "1.0.0",
+    "description": "知识数据采集系统",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.22.1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs"
+}
