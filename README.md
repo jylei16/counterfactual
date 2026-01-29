@@ -1,40 +1,120 @@
-# 知识数据采集系统
+# 反事实数据收集平台
 
-多人协作提交“世界知识 + 由此得到的数据”，无需登录，提交时填写用户名即可。
+一个用于多人协作提交数据的平台。
 
-## 功能
+## 功能特性
 
-- **领域**：可选经典力学、电磁学、光学、热力学、天体物理、化学、生物、地理、社会学，或选择「新建领域」输入自定义领域名
-- **提交内容**：考察的基本世界知识 + 由此得到的数据
-- **多人同时提交**：支持多人同时使用
-- **数据持久化**：所有提交以 JSON 形式保存（Vercel 部署时使用 Vercel Blob）
-- **查看**：可按用户名查询某人提交记录，或导出全部为 JSON 文件
+- ✅ 多人同时提交数据
+- ✅ 支持多个领域（经典力学、电磁学、光学、热力学、天体物理、化学、生物、地理、社会学）
+- ✅ 可以新建领域
+- ✅ 数据以JSON格式保存
+- ✅ 可以查看每个用户的提交情况
+- ✅ 按用户名和领域筛选数据
+- ✅ 下载所有数据为JSON文件
+- ✅ 无需登录，只需填写用户名
 
-## 本地运行
+## 本地开发
+
+### 1. 安装依赖
 
 ```bash
 npm install
-npm start
 ```
 
-访问 http://localhost:3000。本地无 `BLOB_READ_WRITE_TOKEN` 时数据存在内存，重启后清空。
+### 2. 启动开发服务器
 
-## 部署到 Vercel
+```bash
+npm run dev
+```
 
-1. 将项目推送到 GitHub，在 [Vercel](https://vercel.com) 导入该项目并部署。
-2. **启用 Blob 存储**（否则提交数据不会持久化）：
-   - 在 Vercel 项目 → Storage → Create Database → 选择 **Blob**
-   - 创建后会自动绑定环境变量 `BLOB_READ_WRITE_TOKEN`
-3. 重新部署一次，使 Blob 生效。
+### 3. 访问应用
 
-部署完成后，所有人可同时访问网站提交数据，无需登录，只需在提交时填写姓名/ID。
+打开浏览器访问 [http://localhost:3000](http://localhost:3000)
 
-## 后台查看数据
+## 部署到Vercel
 
-- 在页面「查看提交记录」输入用户名并点击「查询」可查看该用户的所有提交。
-- 点击「导出全部 JSON」可下载当前全部提交的 JSON 文件到本地保存。
+### 方法一：使用文件系统（仅限本地，Vercel不支持）
 
-API 说明（供自行查看或备份）：
+当前版本使用文件系统存储，在本地开发时可以正常工作。但在Vercel上，serverless函数使用只读文件系统，无法写入文件。
 
-- `GET /api/submissions`：返回全部提交（JSON）
-- `GET /api/submissions?username=某人`：返回该用户的提交（JSON）
+### 方法二：使用Vercel KV（推荐用于生产环境）
+
+1. **在Vercel项目中启用KV**
+   - 进入Vercel项目设置
+   - 在Storage部分添加Vercel KV
+
+2. **安装KV依赖**
+   ```bash
+   npm install @vercel/kv
+   ```
+
+3. **修改代码使用KV存储**
+   - 将 `lib/dataStorage.ts` 中的导入改为使用 `lib/dataStorageKV.ts`
+   - 更新所有API路由文件中的导入
+
+4. **部署**
+   ```bash
+   git push
+   ```
+   Vercel会自动部署
+
+### 快速部署步骤
+
+1. 将代码推送到GitHub仓库
+2. 在 [Vercel](https://vercel.com) 中导入项目
+3. 如果需要使用KV，在项目设置中启用Vercel KV
+4. 点击部署
+
+## 项目结构
+
+```
+├── pages/
+│   ├── api/          # API路由
+│   │   ├── submit.ts      # 提交数据
+│   │   ├── submissions.ts # 查询数据
+│   │   └── domains.ts     # 获取领域列表
+│   ├── index.tsx     # 主页面（提交数据）
+│   ├── view.tsx      # 查看页面
+│   └── _app.tsx      # Next.js应用入口
+├── lib/
+│   ├── dataStorage.ts    # 文件系统存储（本地开发）
+│   └── dataStorageKV.ts  # Vercel KV存储（生产环境）
+├── styles/           # 样式文件
+└── data/             # 数据存储目录（本地）
+```
+
+## 数据存储
+
+### 本地开发
+所有提交的数据保存在 `/data/submissions.json` 文件中。
+
+### 生产环境（Vercel）
+建议使用Vercel KV或其他数据库服务。参考 `DEPLOYMENT.md` 了解详细说明。
+
+## 使用说明
+
+1. **提交数据**
+   - 访问首页，填写用户名
+   - 选择或创建领域
+   - 输入考察的基本世界知识
+   - 输入数据
+   - 点击提交
+
+2. **查看数据**
+   - 点击"查看提交数据"链接
+   - 可以按用户名搜索
+   - 可以按领域筛选
+   - 可以下载所有数据为JSON文件
+
+## 技术栈
+
+- **框架**: Next.js 14
+- **语言**: TypeScript
+- **样式**: CSS Modules
+- **部署**: Vercel
+
+## 注意事项
+
+- 在Vercel上部署时，需要使用持久化存储（如Vercel KV）
+- 数据文件 `submissions.json` 已添加到 `.gitignore`，不会提交到Git
+- 建议定期备份数据
