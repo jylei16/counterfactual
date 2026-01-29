@@ -20,9 +20,14 @@
                 
                 <div class="form-group">
                     <label>选择领域：</label>
-                    <select id="fieldSelect" required>
-                        <option value="">-- 选择领域 --</option>
-                    </select>
+                    <div class="field-row">
+                        <select id="fieldSelect" required>
+                            <option value="">-- 选择领域 --</option>
+                        </select>
+                        <div id="customFieldWrap" class="custom-field-wrap" style="display: none;">
+                            <input type="text" id="customField" placeholder="输入新领域名称">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -43,8 +48,9 @@
             <h2>查看提交记录</h2>
             <div class="search-bar">
                 <input type="text" id="searchUser" placeholder="输入用户名查询">
-                <button onclick="searchSubmissions()" class="btn-secondary">查询</button>
-                <button onclick="loadAllSubmissions()" class="btn-secondary">显示全部</button>
+                <button type="button" onclick="searchSubmissions()" class="btn-secondary">查询</button>
+                <button type="button" onclick="loadAllSubmissions()" class="btn-secondary">显示全部</button>
+                <button type="button" onclick="exportAllJson()" class="btn-secondary">导出全部 JSON</button>
             </div>
             
             <div id="submissionsList"></div>
@@ -65,6 +71,7 @@
                     data.fields.forEach(field => {
                         select.innerHTML += `<option value="${field}">${field}</option>`;
                     });
+                    select.innerHTML += '<option value="__new__">➕ 新建领域</option>';
                     console.log('✅ 领域加载成功，共', data.fields.length, '个');
                 }
             } catch (error) {
@@ -73,13 +80,36 @@
             }
         }
 
+        // 领域选择变化：显示/隐藏“新建领域”输入
+        document.getElementById('fieldSelect').addEventListener('change', function () {
+            const wrap = document.getElementById('customFieldWrap');
+            const customInput = document.getElementById('customField');
+            if (this.value === '__new__') {
+                wrap.style.display = 'block';
+                customInput.required = true;
+            } else {
+                wrap.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        });
+
         // 提交表单
         document.getElementById('submitForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            let fieldValue = document.getElementById('fieldSelect').value;
+            if (fieldValue === '__new__') {
+                fieldValue = document.getElementById('customField').value.trim();
+                if (!fieldValue) {
+                    alert('请输入新领域名称');
+                    return;
+                }
+            }
+            
             const submission = {
                 username: document.getElementById('username').value,
-                field: document.getElementById('fieldSelect').value,
+                field: fieldValue,
                 knowledge: document.getElementById('knowledge').value,
                 derivedData: document.getElementById('derivedData').value
             };
@@ -94,6 +124,8 @@
                 if (res.ok) {
                     alert('✅ 提交成功！');
                     document.getElementById('submitForm').reset();
+                    document.getElementById('customFieldWrap').style.display = 'none';
+                    loadFields(); // 恢复下拉选项
                     loadAllSubmissions();
                 } else {
                     const error = await res.json();
@@ -115,6 +147,23 @@
                 console.error('加载提交失败:', error);
                 document.getElementById('submissionsList').innerHTML = 
                     '<p class="no-data">⚠️ 加载失败</p>';
+            }
+        }
+
+        // 导出全部数据为 JSON 文件（方便后台保存）
+        async function exportAllJson() {
+            try {
+                const res = await fetch('/api/submissions');
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data.submissions || [], null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'submissions_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
+                console.error(e);
+                alert('导出失败');
             }
         }
 
@@ -156,7 +205,7 @@
                         <p><strong>世界知识：</strong>${s.knowledge}</p>
                         <p><strong>得到的数据：</strong>${s.derivedData}</p>
                     </div>
-                    <button onclick="deleteSubmission('${s.id}')" class="btn-delete">删除</button>
+                    <button type="button" class="btn-delete" data-id="${s.id}" onclick="deleteSubmission(this.dataset.id)">删除</button>
                 </div>
             `).join('');
         }

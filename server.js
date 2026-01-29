@@ -9,10 +9,13 @@ app.use(express.static('public'));
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'submissions.json');
 
-// 初始数据
+// 初始数据（与 api/fields.js 一致）
 const INITIAL_DATA = {
     submissions: [],
-    fields: ['物理', '化学', '生物', '经济学']
+    fields: [
+        '经典力学', '电磁学', '光学', '热力学', '天体物理',
+        '化学', '生物', '地理', '社会学'
+    ]
 };
 
 // 确保数据文件存在
@@ -157,12 +160,17 @@ app.post('/api/submit', async (req, res) => {
     }
 });
 
-// 获取所有提交
+// 获取提交（支持 ?username=xxx 按用户筛选）
 app.get('/api/submissions', async (req, res) => {
     try {
         const data = await readData();
-        console.log('返回提交记录数:', data.submissions.length);
-        res.json({ submissions: data.submissions || [] });
+        const list = data.submissions || [];
+        const username = (req.query.username || '').trim();
+        const submissions = username
+            ? list.filter(s => s.username === username)
+            : list;
+        console.log(username ? `查询用户: ${username}, 找到 ${submissions.length} 条` : `返回提交记录数: ${submissions.length}`);
+        res.json({ submissions });
     } catch (error) {
         console.error('读取提交失败:', error);
         res.status(500).json({ 
@@ -172,34 +180,17 @@ app.get('/api/submissions', async (req, res) => {
     }
 });
 
-// 按用户查询提交
-app.get('/api/submissions/:username', async (req, res) => {
+// 删除提交（支持 ?id=xxx）
+app.delete('/api/submissions', async (req, res) => {
     try {
-        const data = await readData();
-        const userSubmissions = data.submissions.filter(
-            s => s.username === req.params.username
-        );
-        console.log('查询用户:', req.params.username, '找到', userSubmissions.length, '条');
-        res.json({ submissions: userSubmissions });
-    } catch (error) {
-        console.error('查询失败:', error);
-        res.status(500).json({ 
-            error: '查询失败',
-            message: error.message 
-        });
-    }
-});
-
-// 删除提交
-app.delete('/api/submissions/:id', async (req, res) => {
-    try {
+        const id = req.query.id;
+        if (!id) return res.status(400).json({ error: '缺少 id 参数' });
         const data = await readData();
         const originalLength = data.submissions.length;
-        data.submissions = data.submissions.filter(s => s.id !== req.params.id);
-        
+        data.submissions = data.submissions.filter(s => s.id !== id);
         if (data.submissions.length < originalLength) {
             await writeData(data);
-            console.log('删除记录:', req.params.id);
+            console.log('删除记录:', id);
             res.json({ success: true });
         } else {
             res.status(404).json({ error: '记录不存在' });
