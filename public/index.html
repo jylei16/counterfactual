@@ -10,7 +10,6 @@
     <div class="container">
         <h1>📚 知识数据采集系统</h1>
         
-        <!-- 提交表单 -->
         <div class="card">
             <h2>提交数据</h2>
             <form id="submitForm">
@@ -21,12 +20,9 @@
                 
                 <div class="form-group">
                     <label>选择领域：</label>
-                    <div class="field-selector">
-                        <select id="fieldSelect" required>
-                            <option value="">-- 选择领域 --</option>
-                        </select>
-                        <button type="button" id="addFieldBtn">+ 新建领域</button>
-                    </div>
+                    <select id="fieldSelect" required>
+                        <option value="">-- 选择领域 --</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -43,7 +39,6 @@
             </form>
         </div>
         
-        <!-- 数据查看 -->
         <div class="card">
             <h2>查看提交记录</h2>
             <div class="search-bar">
@@ -59,27 +54,24 @@
     <script>
         // 加载领域列表
         async function loadFields() {
-            const res = await fetch('/api/fields');
-            const data = await res.json();
-            const select = document.getElementById('fieldSelect');
-            select.innerHTML = '<option value="">-- 选择领域 --</option>';
-            data.fields.forEach(field => {
-                select.innerHTML += `<option value="${field}">${field}</option>`;
-            });
-        }
-
-        // 添加新领域
-        document.getElementById('addFieldBtn').addEventListener('click', async () => {
-            const field = prompt('请输入新领域名称：');
-            if (field) {
-                await fetch('/api/fields', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ field })
-                });
-                loadFields();
+            try {
+                const res = await fetch('/api/fields');
+                const data = await res.json();
+                
+                const select = document.getElementById('fieldSelect');
+                select.innerHTML = '<option value="">-- 选择领域 --</option>';
+                
+                if (data.fields && Array.isArray(data.fields)) {
+                    data.fields.forEach(field => {
+                        select.innerHTML += `<option value="${field}">${field}</option>`;
+                    });
+                    console.log('✅ 领域加载成功，共', data.fields.length, '个');
+                }
+            } catch (error) {
+                console.error('❌ 加载领域失败:', error);
+                alert('加载领域失败，请刷新页面重试');
             }
-        });
+        }
 
         // 提交表单
         document.getElementById('submitForm').addEventListener('submit', async (e) => {
@@ -92,46 +84,63 @@
                 derivedData: document.getElementById('derivedData').value
             };
             
-            const res = await fetch('/api/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submission)
-            });
-            
-            if (res.ok) {
-                alert('提交成功！');
-                e.target.reset();
-                loadAllSubmissions();
-            } else {
-                alert('提交失败，请重试');
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submission)
+                });
+                
+                if (res.ok) {
+                    alert('✅ 提交成功！');
+                    document.getElementById('submitForm').reset();
+                    loadAllSubmissions();
+                } else {
+                    const error = await res.json();
+                    alert('❌ 提交失败: ' + (error.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('提交失败:', error);
+                alert('❌ 提交失败，请检查网络连接');
             }
         });
 
         // 加载所有提交
         async function loadAllSubmissions() {
-            const res = await fetch('/api/submissions');
-            const data = await res.json();
-            displaySubmissions(data.submissions);
+            try {
+                const res = await fetch('/api/submissions');
+                const data = await res.json();
+                displaySubmissions(data.submissions || []);
+            } catch (error) {
+                console.error('加载提交失败:', error);
+                document.getElementById('submissionsList').innerHTML = 
+                    '<p class="no-data">⚠️ 加载失败</p>';
+            }
         }
 
         // 搜索用户提交
         async function searchSubmissions() {
-            const username = document.getElementById('searchUser').value;
+            const username = document.getElementById('searchUser').value.trim();
+            
             if (!username) {
                 loadAllSubmissions();
                 return;
             }
             
-            const res = await fetch(`/api/submissions/${username}`);
-            const data = await res.json();
-            displaySubmissions(data.submissions);
+            try {
+                const res = await fetch(`/api/submissions?username=${encodeURIComponent(username)}`);
+                const data = await res.json();
+                displaySubmissions(data.submissions || []);
+            } catch (error) {
+                console.error('搜索失败:', error);
+            }
         }
 
         // 显示提交列表
         function displaySubmissions(submissions) {
             const list = document.getElementById('submissionsList');
             
-            if (submissions.length === 0) {
+            if (!submissions || submissions.length === 0) {
                 list.innerHTML = '<p class="no-data">暂无数据</p>';
                 return;
             }
@@ -156,13 +165,28 @@
         async function deleteSubmission(id) {
             if (!confirm('确定要删除这条记录吗？')) return;
             
-            await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
-            loadAllSubmissions();
+            try {
+                const res = await fetch(`/api/submissions?id=${id}`, { 
+                    method: 'DELETE' 
+                });
+                
+                if (res.ok) {
+                    alert('✅ 删除成功');
+                    loadAllSubmissions();
+                } else {
+                    alert('❌ 删除失败');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('❌ 删除失败');
+            }
         }
 
         // 页面加载时初始化
-        loadFields();
-        loadAllSubmissions();
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFields();
+            loadAllSubmissions();
+        });
     </script>
 </body>
 </html>
