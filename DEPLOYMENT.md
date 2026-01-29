@@ -4,7 +4,9 @@
 
 由于 Vercel 的 serverless 函数使用只读文件系统，当前的文件系统存储方案在 Vercel 上无法正常工作。
 
-### 推荐方案：使用 Vercel KV（Redis）
+### 推荐方案：使用 Upstash Redis
+
+Vercel KV 已弃用，请使用 **Upstash Redis**（Vercel 集成 / Marketplace）。
 
 #### 步骤 1：部署项目到 Vercel
 
@@ -14,32 +16,27 @@
 4. 导入你的 GitHub 仓库
 5. 点击 **"Deploy"** 完成首次部署
 
-#### 步骤 2：创建 Vercel KV 数据库
+#### 步骤 2：添加 Upstash Redis
 
 1. 在 Vercel 仪表板中，进入你的项目
-2. 点击顶部导航栏的 **"Storage"** 选项卡
-3. 点击 **"Create Database"** 按钮
-4. 在存储类型选择界面，选择 **"KV"**（键值存储，基于 Redis）
-5. 填写数据库名称（例如：`counterfactual-kv`）
-6. 选择地区（建议选择离你最近的地区）
-7. 点击 **"Create"** 完成创建
+2. 打开 **Integrations** 或 **Storage**，或前往 [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis)
+3. 添加 **Upstash Redis** 集成并按提示创建/关联数据库
+4. 若你之前使用过 Vercel KV，该 KV 可能已迁移为 Upstash Redis，可在 Integrations 中查看
 
 #### 步骤 3：验证环境变量
 
-Vercel 会自动为你的项目配置以下环境变量：
-- `KV_URL` - KV 数据库的连接 URL
-- `KV_REST_API_URL` - REST API 端点
-- `KV_REST_API_TOKEN` - REST API 令牌
-- `KV_REST_API_READ_ONLY_TOKEN` - 只读令牌
+集成会自动为项目配置：
+- `UPSTASH_REDIS_REST_URL` - Redis REST API 地址
+- `UPSTASH_REDIS_REST_TOKEN` - REST API 令牌
 
-这些变量会自动注入到你的项目中，无需手动配置。
+无需手动配置。
 
 #### 步骤 4：确认代码已更新
 
 确保你的代码已经：
-- ✅ 安装了 `@vercel/kv` 依赖（已在 `package.json` 中）
-- ✅ 使用 `lib/dataStorageKV.ts` 替代了 `lib/dataStorage.ts`（已完成）
-- ✅ 所有 API 路由都已更新为异步调用（已完成）
+- ✅ 使用 `@upstash/redis` 依赖（已在 `package.json` 中）
+- ✅ 使用 `lib/dataStorageKV.ts` 作为存储（已完成）
+- ✅ 所有 API 路由已使用异步调用（已完成）
 
 #### 步骤 5：重新部署
 

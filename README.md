@@ -37,20 +37,22 @@ npm run dev
 
 当前版本使用文件系统存储，在本地开发时可以正常工作。但在Vercel上，serverless函数使用只读文件系统，无法写入文件。
 
-### 方法二：使用Vercel KV（推荐用于生产环境）
+### 方法二：使用 Upstash Redis（推荐用于生产环境）
 
-1. **在Vercel项目中启用KV**
-   - 进入Vercel项目设置
-   - 在Storage部分添加Vercel KV
+Vercel KV 已弃用，请使用 Vercel 集成中的 **Upstash Redis**。
 
-2. **安装KV依赖**
+1. **在 Vercel 项目中添加 Redis**
+   - 进入 Vercel 项目 → **Integrations**（或 **Storage**）
+   - 添加 **Upstash Redis**（可从 [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis) 安装）
+
+2. **安装 Redis 依赖**
    ```bash
-   npm install @vercel/kv
+   npm install @upstash/redis
    ```
 
-3. **修改代码使用KV存储**
-   - 将 `lib/dataStorage.ts` 中的导入改为使用 `lib/dataStorageKV.ts`
-   - 更新所有API路由文件中的导入
+3. **代码已使用 Redis 存储**
+   - 项目已使用 `lib/dataStorageKV.ts`（基于 @upstash/redis）
+   - 环境变量由集成自动注入：`UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN`
 
 4. **部署**
    ```bash
@@ -78,7 +80,7 @@ npm run dev
 │   └── _app.tsx      # Next.js应用入口
 ├── lib/
 │   ├── dataStorage.ts    # 文件系统存储（本地开发）
-│   └── dataStorageKV.ts  # Vercel KV存储（生产环境）
+│   └── dataStorageKV.ts  # Upstash Redis 存储（生产环境）
 ├── styles/           # 样式文件
 └── data/             # 数据存储目录（本地）
 ```

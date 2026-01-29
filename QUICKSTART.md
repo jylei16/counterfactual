@@ -21,38 +21,22 @@
 
 当前代码在Vercel上可能无法完全正常工作，因为Vercel的serverless函数使用只读文件系统。
 
-### 生产部署（使用Vercel KV）
+### 生产部署（使用 Upstash Redis）
 
 1. **准备代码**
-   - 确保代码已推送到GitHub
+   - 确保代码已推送到 GitHub
 
-2. **在Vercel中设置**
+2. **在 Vercel 中设置**
    - 登录 [Vercel](https://vercel.com)
-   - 点击"New Project"
-   - 导入你的GitHub仓库
-   - 在项目设置中，进入"Storage"标签
-   - 点击"Create Database"，选择"KV"
-   - 创建KV数据库
+   - 点击 "New Project"，导入你的 GitHub 仓库
+   - 在项目中添加 **Upstash Redis** 集成（Integrations 或 [Marketplace](https://vercel.com/marketplace?category=storage&search=redis)）
+   - 创建/关联 Redis 数据库，环境变量会自动注入
 
-3. **修改代码使用KV**
-   
-   修改以下文件，将 `@/lib/dataStorage` 改为 `@/lib/dataStorageKV`：
-   - `pages/api/submit.ts`
-   - `pages/api/submissions.ts`
-   - `pages/api/domains.ts`
-   
-   并将所有同步函数调用改为异步（添加 `await`）
+3. **代码已使用 Redis**
+   - API 已使用 `lib/dataStorageKV.ts`（@upstash/redis）
+   - 无需改导入，依赖已在 `package.json` 中
 
-4. **安装KV依赖**
-   
-   在 `package.json` 中添加：
-   ```json
-   "dependencies": {
-     "@vercel/kv": "^0.2.0"
-   }
-   ```
-
-5. **部署**
+4. **部署**
    - Vercel会自动检测到代码推送并部署
    - 或手动点击"Redeploy"
 

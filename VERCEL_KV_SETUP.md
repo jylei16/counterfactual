@@ -1,4 +1,6 @@
-# Vercel KV 启用详细步骤
+# Upstash Redis 启用详细步骤（Vercel）
+
+> **说明**：Vercel KV 已弃用。若你之前使用过 Vercel KV，它可能已迁移为 Upstash Redis，可在 Vercel 的 **Integrations** 中查看。新项目请按以下步骤添加 Upstash Redis。
 
 ## 📋 前置条件
 
@@ -8,85 +10,49 @@
 
 ## 🚀 详细步骤
 
-### 第一步：进入项目设置
+### 第一步：进入项目
 
 1. 登录 [Vercel Dashboard](https://vercel.com/dashboard)
 2. 找到并点击你的项目名称
 
-### 第二步：打开 Storage 选项卡
+### 第二步：添加 Redis 集成
 
-1. 在项目页面顶部，你会看到多个选项卡：
-   - Overview（概览）
-   - Deployments（部署）
-   - **Storage（存储）** ← 点击这个
-   - Settings（设置）
-   - Analytics（分析）
-   - 等等
+1. 在项目页面：
+   - 点击 **"Integrations"** 选项卡，或
+   - 进入 **"Storage"**（若仍显示），或
+   - 打开 [Vercel Marketplace](https://vercel.com/marketplace?category=storage&search=redis)，搜索 **Redis** 并选择 **Upstash Redis**
 
-2. 点击 **"Storage"** 选项卡
+2. 若在 Integrations 中：
+   - 搜索 **Upstash** 或 **Redis**
+   - 点击 **Upstash Redis**，按提示安装并关联到当前项目
 
-### 第三步：创建 KV 数据库
+3. 若你已有迁移后的 Upstash Redis（原 Vercel KV）：
+   - 在 **Integrations** 中应能看到已连接的 Redis
+   - 无需再创建，环境变量已配置
 
-1. 在 Storage 页面，你会看到：
-   - 一个 **"Create Database"** 或 **"Add Database"** 按钮
-   - 或者显示已有的数据库列表
+### 第三步：创建 / 关联数据库
 
-2. 点击 **"Create Database"** 按钮
+1. 按集成向导创建新 Redis 数据库，或关联已有 Upstash 数据库
+2. 选择地区（建议选离你最近的）
+3. 完成创建后，Vercel 会自动为项目注入环境变量
 
-3. 选择存储类型：
-   - 你会看到多个选项：
-     - **Postgres**（关系型数据库）
-     - **KV**（键值存储，基于 Redis）← **选择这个**
-     - **Blob**（对象存储）
-     - **Edge Config**（边缘配置）
-   
-4. 点击 **"KV"** 选项
+### 第四步：验证环境变量（自动配置）
 
-### 第四步：配置 KV 数据库
+集成会自动为项目添加：
 
-1. **数据库名称**：
-   - 输入一个名称，例如：`counterfactual-kv`
-   - 或者使用默认名称
-
-2. **地区选择**：
-   - 选择一个地区（建议选择离你最近的）
-   - 例如：`us-east-1`、`eu-west-1`、`ap-southeast-1` 等
-
-3. **计划选择**：
-   - 通常有免费计划（Hobby）和付费计划
-   - 对于测试和小型项目，免费计划通常足够
-
-4. 点击 **"Create"** 或 **"Continue"** 按钮
-
-### 第五步：等待创建完成
-
-- Vercel 会自动创建 KV 数据库
-- 这个过程通常只需要几秒钟
-- 创建完成后，你会看到数据库出现在列表中
-
-### 第六步：验证环境变量（自动配置）
-
-Vercel 会自动为你的项目添加以下环境变量：
-
-- `KV_URL`
-- `KV_REST_API_URL`
-- `KV_REST_API_TOKEN`
-- `KV_REST_API_READ_ONLY_TOKEN`
+- `UPSTASH_REDIS_REST_URL` - Redis REST API 地址
+- `UPSTASH_REDIS_REST_TOKEN` - REST API 令牌
 
 **查看环境变量**：
 1. 在项目页面，点击 **"Settings"** 选项卡
-2. 在左侧菜单中找到 **"Environment Variables"**
-3. 你应该能看到 KV 相关的环境变量（通常以 `KV_` 开头）
+2. 在左侧找到 **"Environment Variables"**
+3. 确认存在 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`
 
-### 第七步：重新部署项目
+### 第五步：重新部署项目
 
-1. 如果代码有更新，推送到 GitHub
+1. 若代码有更新，推送到 GitHub
 2. Vercel 会自动检测并部署
-3. 或者手动触发：
-   - 在 **"Deployments"** 选项卡
-   - 找到最新的部署
-   - 点击右侧的 **"..."** 菜单
-   - 选择 **"Redeploy"**
+3. 或手动：**Deployments** → 最新部署 → **"..."** → **Redeploy**
 
 ## ✅ 验证是否成功
 
@@ -94,77 +60,40 @@ Vercel 会自动为你的项目添加以下环境变量：
 
 1. 访问你的网站
 2. 尝试提交一条数据
-3. 查看是否能正常保存
-4. 尝试查看数据，看是否能正常显示
+3. 查看是否能正常保存与展示
 
 ### 方法 2：查看 Vercel 日志
 
-1. 在 Vercel 仪表板中，进入 **"Deployments"** 选项卡
-2. 点击最新的部署
-3. 查看 **"Functions"** 或 **"Logs"** 部分
-4. 检查是否有错误信息
+1. **Deployments** → 最新部署
+2. 查看 **Functions** / **Logs**，确认无报错
 
-### 方法 3：检查 Storage 使用情况
+### 方法 3：检查集成与用量
 
-1. 在 **"Storage"** 选项卡中
-2. 点击你创建的 KV 数据库
-3. 查看是否有数据写入
-
-## 🖼️ 界面参考
-
-Vercel 的界面可能会更新，但大致流程如下：
-
-```
-Vercel Dashboard
-  └── Your Project
-      └── Storage Tab
-          └── Create Database Button
-              └── Select KV
-                  └── Configure (Name, Region)
-                      └── Create
-```
+1. 在 **Integrations** 或 **Storage** 中打开 Upstash Redis
+2. 在 Upstash 控制台查看是否有请求与数据
 
 ## ❓ 常见问题
 
-### Q1: 找不到 Storage 选项卡？
+### Q1: 之前用的是 Vercel KV，需要改代码吗？
 
-**A**: 可能的原因：
-- 项目还没有部署过（需要至少部署一次）
-- 你的 Vercel 账户类型不支持 Storage（免费账户应该支持）
-- 尝试刷新页面或重新登录
+**A**: 本项目已迁移到 `@upstash/redis`，使用 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`。若你的 KV 已迁移为 Upstash Redis，Vercel 会提供上述环境变量，一般无需改代码，重新部署即可。
 
-### Q2: 创建 KV 时提示需要付费？
+### Q2: 环境变量没有自动添加？
 
-**A**: 
-- 检查是否选择了付费计划
-- Vercel KV 有免费额度，通常足够小型项目使用
-- 如果确实需要付费，可以考虑使用其他免费替代方案
+**A**: 确认集成已安装并关联到本项目，然后到 Settings → Environment Variables 查看；必要时重新部署。
 
-### Q3: 环境变量没有自动添加？
+### Q3: 本地开发时如何使用 Redis？
 
-**A**: 
-- 等待几分钟，有时需要一些时间
-- 尝试重新部署项目
-- 手动检查 Settings → Environment Variables
-
-### Q4: 本地开发时如何使用 KV？
-
-**A**: 
-- 在项目根目录创建 `.env.local` 文件
-- 从 Vercel 仪表板复制环境变量
-- 添加到 `.env.local` 文件中
-- 注意：不要将 `.env.local` 提交到 Git
-
-## 📝 下一步
-
-启用 KV 后，你的代码已经配置好了，应该可以直接使用。如果遇到问题：
-
-1. 检查 Vercel 部署日志
-2. 确认环境变量已正确配置
-3. 验证代码中的 KV 导入是否正确
+**A**: 在项目根目录创建 `.env.local`，添加：
+```
+UPSTASH_REDIS_REST_URL=你的URL
+UPSTASH_REDIS_REST_TOKEN=你的TOKEN
+```
+从 Vercel 或 Upstash 控制台复制即可。不要将 `.env.local` 提交到 Git。
 
 ## 🔗 相关链接
 
-- [Vercel KV 文档](https://vercel.com/docs/storage/vercel-kv)
-- [Vercel Storage 概览](https://vercel.com/docs/storage)
-- [@vercel/kv 包文档](https://www.npmjs.com/package/@vercel/kv)
+- [Upstash Redis 文档](https://upstash.com/docs/redis)
+- [Vercel + Upstash 集成](https://upstash.com/docs/redis/howto/vercelintegration)
+- [@upstash/redis 包](https://www.npmjs.com/package/@upstash/redis)
+- [Vercel Marketplace - Redis](https://vercel.com/marketplace?category=storage&search=redis)

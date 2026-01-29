@@ -1,8 +1,11 @@
-// 使用 Vercel KV 的存储方案
-// 需要先安装: npm install @vercel/kv
-// 并在 Vercel 项目中配置 KV
+// 使用 Upstash Redis 的存储方案（Vercel KV 已弃用，迁移至 Upstash）
+// 需要先安装: npm install @upstash/redis
+// 并在 Vercel 项目中添加 Redis 集成（Integrations → Upstash Redis）
+// 环境变量: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = Redis.fromEnv();
 
 export interface Submission {
   id: string;
@@ -18,7 +21,7 @@ const KV_KEY = 'submissions';
 // 读取所有提交
 export async function readSubmissions(): Promise<Submission[]> {
   try {
-    const submissions = await kv.get<Submission[]>(KV_KEY);
+    const submissions = await redis.get<Submission[]>(KV_KEY);
     return submissions || [];
   } catch (error) {
     console.error('Error reading submissions:', error);
@@ -37,7 +40,7 @@ export async function saveSubmission(
     timestamp: new Date().toISOString(),
   };
   submissions.push(newSubmission);
-  await kv.set(KV_KEY, submissions);
+  await redis.set(KV_KEY, submissions);
   return newSubmission;
 }
 
